@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Checklist Veicular</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Checklist Veicular</h1>
+
+<div class="form">
+  <input id="nome" placeholder="Nome">
+  <input id="veiculo" placeholder="Veículo">
+  <input id="empresa" placeholder="Empresa">
+  <input id="data" type="date">
+</div>
+
+<div id="checklist"></div>
+
+<textarea id="obs" placeholder="Observações"></textarea>
+
+<button onclick="salvarChecklist()">Salvar</button>
+
+<h2>Checklists Salvos</h2>
+<div id="lista"></div>
+
+<script src="database.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,41 @@
+body {
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    padding: 20px;
+}
+
+h1, h2 {
+    color: #3b82f6;
+}
+
+.form input {
+    margin: 5px;
+    padding: 8px;
+}
+
+.linha {
+    background: #1e293b;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 8px;
+}
+
+.opcoes label {
+    margin-right: 10px;
+}
+
+button {
+    background: #2563eb;
+    color: white;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+}
+
+.card {
+    background: #1e293b;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 8px;
+}
