@@ -161,3 +161,34 @@ RESPONSIVIDADE
   }
 
 }
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#dashboard {
+  background: #1e293b;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.status-ok {
+  color: #22c55e;
+}
+
+.status-pendente {
+  color: #ef4444;
+}
+
+.tag {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  margin-left: 5px;
+}
+
+.urgente { background: red; }
+.media { background: orange; }
+.baixa { background: green; }
