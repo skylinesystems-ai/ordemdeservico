@@ -286,3 +286,80 @@ document.addEventListener("DOMContentLoaded", () => {
   listar()
   atualizarDashboard()
 })
+// =========================
+// GERAR OS + PDF + ENVIO
+// =========================
+function gerarOS(index){
+
+  const db = getDB()
+  const item = db[index]
+
+  if(!item){
+    alert("Erro ao gerar OS")
+    return
+  }
+
+  const { jsPDF } = window.jspdf
+  const doc = new jsPDF()
+
+  const numeroOS = "OS-" + Date.now()
+
+  const problemas = item.problemas.filter(p => !p.resolvido)
+
+  let y = 20
+
+  doc.setFontSize(16)
+  doc.text("ORDEM DE SERVIÇO", 20, y)
+
+  y += 10
+  doc.setFontSize(10)
+
+  doc.text(`Número: ${numeroOS}`, 20, y)
+  y += 6
+  doc.text(`Data: ${new Date().toLocaleDateString()}`, 20, y)
+  y += 10
+
+  doc.text(`Responsável: ${item.nome}`, 20, y)
+  y += 6
+  doc.text(`Veículo: ${item.veiculo}`, 20, y)
+  y += 6
+  doc.text(`Empresa: ${item.empresa}`, 20, y)
+
+  y += 10
+  doc.text("Itens para compra/manutenção:", 20, y)
+
+  y += 6
+
+  if(problemas.length === 0){
+    doc.text("Nenhum problema identificado", 20, y)
+  } else {
+    problemas.forEach((p, i) => {
+      doc.text(`- ${p.nome}`, 20, y)
+      y += 6
+    })
+  }
+
+  y += 10
+  doc.text(`Observações: ${item.observacoes || "Nenhuma"}`, 20, y)
+
+  // GERAR PDF
+  const pdfBlob = doc.output("blob")
+  const url = URL.createObjectURL(pdfBlob)
+
+  // ABRIR PDF
+  window.open(url)
+
+  // MENSAGEM PARA WHATSAPP
+  const texto = encodeURIComponent(
+    `📄 ORDEM DE SERVIÇO\n\nVeículo: ${item.veiculo}\nProblemas: ${
+      problemas.length > 0
+        ? problemas.map(p => p.nome).join(", ")
+        : "Nenhum"
+    }`
+  )
+
+  // ALTERE PARA O NÚMERO DO COMPRAS
+  const numero = "5592986275697"
+
+  window.open(`https://wa.me/${numero}?text=${texto}`, "_blank")
+}
