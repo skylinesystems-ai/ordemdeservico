@@ -65,17 +65,14 @@ function calcularUrgencia(item){
 
   const itemLower = item.toLowerCase()
 
-  // CRÍTICO (corretiva)
   if(itemLower.includes("freio") || itemLower.includes("farol") || itemLower.includes("seta")){
     return "urgente"
   }
 
-  // MÉDIO (preventiva)
   if(itemLower.includes("óleo") || itemLower.includes("pneu")){
     return "media"
   }
 
-  // BAIXO (preditiva)
   return "baixa"
 }
 
@@ -197,7 +194,7 @@ function salvarChecklist(){
 }
 
 // =========================
-// MARCAR COMO RESOLVIDO
+// RESOLVER
 // =========================
 function resolver(indexChecklist, indexProblema){
 
@@ -207,6 +204,54 @@ function resolver(indexChecklist, indexProblema){
 
   listar()
   atualizarDashboard()
+}
+
+// =========================
+// GERAR OS + PDF + WHATSAPP
+// =========================
+function gerarOS(index){
+
+  const db = getDB()
+  const item = db[index]
+
+  const { jsPDF } = window.jspdf
+  const doc = new jsPDF()
+
+  const problemas = item.problemas.filter(p => !p.resolvido)
+
+  let y = 20
+
+  doc.setFontSize(14)
+  doc.text("ORDEM DE SERVIÇO", 20, y)
+
+  y += 10
+  doc.setFontSize(10)
+
+  doc.text(`Veículo: ${item.veiculo}`, 20, y)
+  y += 6
+  doc.text(`Responsável: ${item.nome}`, 20, y)
+  y += 10
+
+  doc.text("Itens:", 20, y)
+  y += 6
+
+  problemas.forEach(p => {
+    doc.text(`- ${p.nome}`, 20, y)
+    y += 6
+  })
+
+  const blob = doc.output("blob")
+  const url = URL.createObjectURL(blob)
+
+  window.open(url)
+
+  const numero = "5592999999999" // TROCAR
+
+  const texto = encodeURIComponent(
+    `📄 Ordem de Serviço\n\nVeículo: ${item.veiculo}\nItens: ${problemas.map(p => p.nome).join(", ")}`
+  )
+
+  window.open(`https://wa.me/${numero}?text=${texto}`, "_blank")
 }
 
 // =========================
@@ -249,7 +294,9 @@ function listar(){
       <b>${item.veiculo}</b><br>
       Status: <span class="${status === "LIBERADO" ? "status-ok" : "status-pendente"}">${status}</span>
       <br><br>
-      ${problemasHTML || "Sem problemas"}
+      ${problemasHTML}
+      <br><br>
+      <button onclick="gerarOS(${i})">📄 Gerar Ordem de Serviço</button>
     `
 
     lista.appendChild(div)
@@ -286,80 +333,3 @@ document.addEventListener("DOMContentLoaded", () => {
   listar()
   atualizarDashboard()
 })
-// =========================
-// GERAR OS + PDF + ENVIO
-// =========================
-function gerarOS(index){
-
-  const db = getDB()
-  const item = db[index]
-
-  if(!item){
-    alert("Erro ao gerar OS")
-    return
-  }
-
-  const { jsPDF } = window.jspdf
-  const doc = new jsPDF()
-
-  const numeroOS = "OS-" + Date.now()
-
-  const problemas = item.problemas.filter(p => !p.resolvido)
-
-  let y = 20
-
-  doc.setFontSize(16)
-  doc.text("ORDEM DE SERVIÇO", 20, y)
-
-  y += 10
-  doc.setFontSize(10)
-
-  doc.text(`Número: ${numeroOS}`, 20, y)
-  y += 6
-  doc.text(`Data: ${new Date().toLocaleDateString()}`, 20, y)
-  y += 10
-
-  doc.text(`Responsável: ${item.nome}`, 20, y)
-  y += 6
-  doc.text(`Veículo: ${item.veiculo}`, 20, y)
-  y += 6
-  doc.text(`Empresa: ${item.empresa}`, 20, y)
-
-  y += 10
-  doc.text("Itens para compra/manutenção:", 20, y)
-
-  y += 6
-
-  if(problemas.length === 0){
-    doc.text("Nenhum problema identificado", 20, y)
-  } else {
-    problemas.forEach((p, i) => {
-      doc.text(`- ${p.nome}`, 20, y)
-      y += 6
-    })
-  }
-
-  y += 10
-  doc.text(`Observações: ${item.observacoes || "Nenhuma"}`, 20, y)
-
-  // GERAR PDF
-  const pdfBlob = doc.output("blob")
-  const url = URL.createObjectURL(pdfBlob)
-
-  // ABRIR PDF
-  window.open(url)
-
-  // MENSAGEM PARA WHATSAPP
-  const texto = encodeURIComponent(
-    `📄 ORDEM DE SERVIÇO\n\nVeículo: ${item.veiculo}\nProblemas: ${
-      problemas.length > 0
-        ? problemas.map(p => p.nome).join(", ")
-        : "Nenhum"
-    }`
-  )
-
-  // ALTERE PARA O NÚMERO DO COMPRAS
-  const numero = "5592986275697"
-
-  window.open(`https://wa.me/${numero}?text=${texto}`, "_blank")
-}
