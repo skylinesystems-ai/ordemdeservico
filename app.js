@@ -1,5 +1,5 @@
 // =========================
-// NORMALIZAR TEXTO
+// NORMALIZAR
 // =========================
 function normalizar(texto){
   return texto.toLowerCase()
@@ -8,90 +8,79 @@ function normalizar(texto){
 }
 
 // =========================
-// CONFIG CHECKLIST
+// CONFIG
 // =========================
 const secoes = {
 
   "Condições": {
     opcoes: ["Bom","Médio","Ruim"],
-    itens: [
-      "Limpeza externa",
-      "Limpeza interna",
-      "Pneus",
-      "Estepe",
-      "Caçamba"
-    ]
+    itens: ["Limpeza externa","Limpeza interna","Pneus","Estepe","Caçamba"]
   },
 
   "Luzes traseiras": {
     opcoes: ["Sim","Não","N/A"],
     itens: [
       "Luz de placa",
-      "Luz de ré",
-      "Luz de freio",
-      "Seta traseira",
-      "Lanterna",
-      "Pisca-alerta traseiro"
+      "Luz de ré esquerda","Luz de ré direita",
+      "Luz de freio esquerda","Luz de freio direita",
+      "Seta traseira esquerda","Seta traseira direita"
     ]
   },
 
   "Luzes dianteiras": {
     opcoes: ["Sim","Não","N/A"],
     itens: [
-      "Farol alto",
-      "Farol baixo",
-      "Seta dianteira",
-      "Luz de posição",
-      "Farol de neblina",
-      "Pisca-alerta dianteiro"
+      "Farol alto esquerdo","Farol alto direito",
+      "Farol baixo esquerdo","Farol baixo direito",
+      "Seta dianteira esquerda","Seta dianteira direita",
+      "Neblina esquerda","Neblina direita"
     ]
   },
 
   "Segurança": {
     opcoes: ["Sim","Não","N/A"],
     itens: [
-      "Alarme",
-      "Buzina",
-      "Chave de roda",
-      "Cintos",
-      "Documentos",
-      "Extintor",
-      "Limpadores",
-      "Macaco",
-      "Painel",
-      "Retrovisor interno",
-      "Retrovisor direito",
-      "Retrovisor esquerdo",
-      "Travas",
-      "Triângulo",
-      "Airbag",
-      "Freio ABS"
+      "Alarme","Buzina","Chave de roda","Cintos","Documentos",
+      "Extintor","Limpadores","Macaco","Painel",
+      "Retrovisor interno","Retrovisor direito","Retrovisor esquerdo",
+      "Travas","Triângulo"
     ]
   },
 
   "Motor": {
     opcoes: ["Sim","Não","N/A"],
     itens: [
-      "Acelerador",
-      "Água do limpador",
-      "Água do radiador",
-      "Embreagem",
-      "Freio",
-      "Freio de mão",
-      "Óleo do freio",
-      "Óleo do motor",
-      "Tanque de partida",
-      "Correia",
-      "Bateria",
-      "Nível de combustível",
-      "Vazamentos"
+      "Acelerador","Água do limpador","Água do radiador",
+      "Embreagem","Freio","Freio de mão",
+      "Óleo do freio","Óleo do motor","Tanque de partida"
     ]
   }
 
 }
 
 // =========================
-// RENDER CHECKLIST
+// IA DE URGÊNCIA
+// =========================
+function calcularUrgencia(item){
+
+  const itemLower = item.toLowerCase()
+
+  // CRÍTICO (corretiva)
+  if(itemLower.includes("freio") || itemLower.includes("farol") || itemLower.includes("seta")){
+    return "urgente"
+  }
+
+  // MÉDIO (preventiva)
+  if(itemLower.includes("óleo") || itemLower.includes("pneu")){
+    return "media"
+  }
+
+  // BAIXO (preditiva)
+  return "baixa"
+}
+
+// =========================
+// RENDER
 // =========================
 function renderChecklist(){
 
@@ -130,7 +119,7 @@ function renderChecklist(){
 }
 
 // =========================
-// PEGAR VALOR RADIO
+// PEGAR VALOR
 // =========================
 function getValor(name){
   const el = document.querySelector(`input[name="${name}"]:checked`)
@@ -138,7 +127,7 @@ function getValor(name){
 }
 
 // =========================
-// ANALISAR PROBLEMAS
+// ANALISAR
 // =========================
 function analisarChecklist(respostas){
 
@@ -153,11 +142,11 @@ function analisarChecklist(respostas){
 
       if(secao === "Condições"){
         if(valor === "Ruim"){
-          problemas.push(item)
+          problemas.push({nome: item, resolvido: false})
         }
       } else {
         if(valor === "Não"){
-          problemas.push(item)
+          problemas.push({nome: item, resolvido: false})
         }
       }
 
@@ -169,23 +158,22 @@ function analisarChecklist(respostas){
 }
 
 // =========================
-// COLETAR DADOS
+// COLETAR
 // =========================
 function coletarChecklist(){
 
   const dados = {
-    nome: document.getElementById("nome").value,
-    veiculo: document.getElementById("veiculo").value,
-    empresa: document.getElementById("empresa").value,
-    data: document.getElementById("data").value,
-    observacoes: document.getElementById("obs").value,
+    nome: nome.value,
+    veiculo: veiculo.value,
+    empresa: empresa.value,
+    data: data.value,
+    observacoes: obs.value,
     respostas: {}
   }
 
   Object.keys(secoes).forEach(secao => {
     secoes[secao].itens.forEach(item => {
-      const key = normalizar(item)
-      dados.respostas[key] = getValor(key)
+      dados.respostas[normalizar(item)] = getValor(normalizar(item))
     })
   })
 
@@ -193,26 +181,36 @@ function coletarChecklist(){
 }
 
 // =========================
-// SALVAR CHECKLIST
+// SALVAR
 // =========================
 function salvarChecklist(){
 
   const dados = coletarChecklist()
-
-  // GERAR PROBLEMAS
   dados.problemas = analisarChecklist(dados.respostas)
 
   const db = getDB()
   db.push(dados)
   saveDB(db)
 
-  alert("Checklist salvo com sucesso!")
-
   listar()
+  atualizarDashboard()
 }
 
 // =========================
-// LISTAR CHECKLISTS
+// MARCAR COMO RESOLVIDO
+// =========================
+function resolver(indexChecklist, indexProblema){
+
+  const db = getDB()
+  db[indexChecklist].problemas[indexProblema].resolvido = true
+  saveDB(db)
+
+  listar()
+  atualizarDashboard()
+}
+
+// =========================
+// LISTAR
 // =========================
 function listar(){
 
@@ -226,20 +224,32 @@ function listar(){
     const div = document.createElement("div")
     div.className = "card"
 
+    const problemasHTML = item.problemas.map((p, j) => {
+
+      const urgencia = calcularUrgencia(p.nome)
+
+      return `
+        <div>
+          ${p.nome}
+          <span class="tag ${urgencia}">${urgencia}</span>
+          ${
+            p.resolvido
+            ? "✅"
+            : `<button onclick="resolver(${i}, ${j})">✔</button>`
+          }
+        </div>
+      `
+    }).join("")
+
+    const status = item.problemas.some(p => !p.resolvido)
+      ? "PENDENTE"
+      : "LIBERADO"
+
     div.innerHTML = `
-      <b>#${i+1}</b><br>
-      ${item.nome} - ${item.veiculo}<br>
-      ${item.empresa} - ${item.data}<br><br>
-
-      <b>⚠️ Problemas:</b><br>
-      ${
-      item.problemas && item.problemas.length > 0
-        ? item.problemas.map(p => `- ${p}`).join("<br>")
-        : "Nenhum problema"
-    }
-
+      <b>${item.veiculo}</b><br>
+      Status: <span class="${status === "LIBERADO" ? "status-ok" : "status-pendente"}">${status}</span>
       <br><br>
-      <button onclick="gerarOS(${i})">📄 Gerar Ordem de Serviço</button>
+      ${problemasHTML || "Sem problemas"}
     `
 
     lista.appendChild(div)
@@ -247,83 +257,25 @@ function listar(){
 }
 
 // =========================
-// GERAR ORDEM DE SERVIÇO
+// DASHBOARD
 // =========================
-function gerarOS(index){
+function atualizarDashboard(){
 
   const db = getDB()
-  const item = db[index]
 
-  if(!item){
-    alert("Erro ao gerar OS")
-    return
-  }
+  let pendentes = 0
+  let liberados = 0
 
-  const numeroOS = "OS-" + Date.now()
+  db.forEach(c => {
+    const temProblema = c.problemas.some(p => !p.resolvido)
+    if(temProblema) pendentes++
+    else liberados++
+  })
 
-  const problemasHTML = item.problemas && item.problemas.length > 0
-    ? item.problemas.map(p => `<li>${p}</li>`).join("")
-    : "<li>Nenhum problema identificado</li>"
-
-  const status = item.problemas.length > 0
-    ? "PENDENTE"
-    : "APROVADO"
-
-  const novaJanela = window.open("", "_blank")
-
-  novaJanela.document.write(`
-    <html>
-      <head>
-        <title>Ordem de Serviço</title>
-        <style>
-          body { font-family: Arial; padding: 20px; }
-          h1 { color: #1e40af; }
-          .box {
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 8px;
-          }
-          .status {
-            font-weight: bold;
-            color: ${status === "PENDENTE" ? "red" : "green"};
-          }
-        </style>
-      </head>
-      <body>
-
-        <h1>Ordem de Serviço</h1>
-
-        <div class="box">
-          <b>Nº:</b> ${numeroOS}<br>
-          <b>Data:</b> ${new Date().toLocaleDateString()}<br>
-          <b>Status:</b> <span class="status">${status}</span>
-        </div>
-
-        <div class="box">
-          <b>Responsável:</b> ${item.nome}<br>
-          <b>Veículo:</b> ${item.veiculo}<br>
-          <b>Empresa:</b> ${item.empresa}
-        </div>
-
-        <div class="box">
-          <b>Itens para manutenção:</b>
-          <ul>${problemasHTML}</ul>
-        </div>
-
-        <div class="box">
-          <b>Observações:</b><br>
-          ${item.observacoes || "Nenhuma"}
-        </div>
-
-        <br><br>
-        <button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
-
-      </body>
-    </html>
-  `)
-
-  novaJanela.document.close()
+  document.getElementById("dashboard").innerHTML = `
+    🚛 Veículos Pendentes: ${pendentes} <br>
+    ✅ Veículos Liberados: ${liberados}
+  `
 }
 
 // =========================
@@ -332,4 +284,5 @@ function gerarOS(index){
 document.addEventListener("DOMContentLoaded", () => {
   renderChecklist()
   listar()
+  atualizarDashboard()
 })
