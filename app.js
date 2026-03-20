@@ -261,44 +261,37 @@ function gerarOS(index){
 
   const problemas = item.problemas.filter(p => !p.resolvido)
 
-  // =========================
-  // CONFIG BASE
-  // =========================
   const left = 15
-  const right = 195
   let y = 15
 
   doc.setFont("helvetica")
 
   // =========================
-  // CABEÇALHO COM LOGO
+  // TÍTULO
   // =========================
   doc.setFontSize(16)
   doc.text("ORDEM DE SERVIÇO", 70, y)
 
-  // espaço para logo
-  doc.rect(150, 8, 40, 20) // caixa logo
+  // caixa logo
+  doc.rect(150, 8, 40, 20)
 
   y += 15
 
   // =========================
-  // GRID SUPERIOR
+  // CABEÇALHO
   // =========================
   doc.setFontSize(10)
 
-  // Linha 1
   doc.text(`Nº: ${numeroOS}`, left, y)
   doc.text(`DATA: ${dataBR}`, 110, y)
 
   y += 8
 
-  // Linha 2
   doc.text(`PLACA: ${item.veiculo}`, left, y)
   doc.text(`HORA: ${hora}`, 110, y)
 
   y += 8
 
-  // Linha 3
   doc.text(`MOTORISTA: ${item.nome}`, left, y)
 
   y += 12
@@ -307,56 +300,48 @@ function gerarOS(index){
   // RELATO
   // =========================
   doc.text("RELATO DO MOTORISTA:", left, y)
-
   y += 6
 
-  for(let i=0;i<3;i++){
-    doc.line(left, y, right, y)
-    y += 7
-  }
+  const relato = item.observacoes || "Sem observações"
+  const relatoQuebrado = doc.splitTextToSize(relato, 170)
 
-  if(item.observacoes){
-    doc.text(item.observacoes, left + 2, y - 15)
-  }
-
-  y += 5
+  doc.text(relatoQuebrado, left, y)
+  y += relatoQuebrado.length * 6 + 6
 
   // =========================
   // SERVIÇO A SER FEITO
   // =========================
   doc.text("SERVIÇO A SER FEITO:", left, y)
-
   y += 6
 
-  for(let i=0;i<5;i++){
-    doc.line(left, y, right, y)
-    y += 7
-  }
+  if(problemas.length === 0){
 
-  let yLista = y - 30
+    doc.text("Nenhum problema identificado", left, y)
+    y += 8
 
-  if(problemas.length > 0){
-    problemas.forEach((p, i) => {
-      doc.text(`• ${p.nome}`, left + 2, yLista)
-      yLista += 6
+  } else {
+
+    problemas.forEach(p => {
+
+      const texto = `• ${p.nome}`
+      const linha = doc.splitTextToSize(texto, 170)
+
+      doc.text(linha, left, y)
+      y += linha.length * 6
+
     })
-  }
 
-  y += 5
+    y += 6
+  }
 
   // =========================
   // SERVIÇO FEITO
   // =========================
   doc.text("SERVIÇO FEITO NO VEÍCULO:", left, y)
+  y += 10
 
-  y += 6
-
-  for(let i=0;i<5;i++){
-    doc.line(left, y, right, y)
-    y += 7
-  }
-
-  y += 5
+  // espaço livre dinâmico
+  y += 20
 
   // =========================
   // ASSINATURA
@@ -365,7 +350,7 @@ function gerarOS(index){
   doc.line(left + 35, y, left + 120, y)
 
   // =========================
-  // BORDA EXTERNA (VISUAL PROFISSIONAL)
+  // BORDA
   // =========================
   doc.rect(10, 5, 190, 280)
 
@@ -392,6 +377,7 @@ function gerarOS(index){
 
   window.open(`https://wa.me/${numero}?text=${texto}`, "_blank")
 }
+
 // =========================
 // LISTAR
 // =========================
