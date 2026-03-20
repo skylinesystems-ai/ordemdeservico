@@ -209,6 +209,28 @@ function resolver(indexChecklist, indexProblema){
 // =========================
 // GERAR OS + PDF + WHATSAPP
 // =========================
+// =========================
+// GERAR NÚMERO DA OS
+// =========================
+function gerarNumeroOS(){
+  let numero = localStorage.getItem("numeroOS") || 0
+  numero++
+  localStorage.setItem("numeroOS", numero)
+  return "OS-" + String(numero).padStart(4, "0")
+}
+
+// =========================
+// FORMATAR DATA BR
+// =========================
+function formatarDataBR(dataISO){
+  if(!dataISO) return ""
+  const [ano, mes, dia] = dataISO.split("-")
+  return `${dia}/${mes}/${ano}`
+}
+
+// =========================
+// GERAR OS PROFISSIONAL
+// =========================
 function gerarOS(index){
 
   const db = getDB()
@@ -222,76 +244,108 @@ function gerarOS(index){
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
 
-  const problemas = item.problemas.filter(p => !p.resolvido)
-
+  const numeroOS = gerarNumeroOS()
+  const dataBR = formatarDataBR(item.data)
   const hora = new Date().toLocaleTimeString()
+
+  const problemas = item.problemas.filter(p => !p.resolvido)
 
   let y = 20
 
-  doc.setFontSize(12)
-
+  // =========================
   // TÍTULO
-  doc.text("ORDEM DE SERVIÇO", 80, y)
-
-  y += 15
-
-  // CABEÇALHO
-  doc.text(`DATA: ${item.data}`, 20, y)
-  doc.text(`PLACA: ${item.veiculo}`, 120, y)
+  // =========================
+  doc.setFontSize(14)
+  doc.text("ORDEM DE SERVIÇO", 70, y)
 
   y += 10
-  doc.text(`HORA: ${hora}`, 20, y)
-  doc.text(`MOTORISTA: ${item.nome}`, 120, y)
+  doc.setFontSize(10)
+
+  // =========================
+  // CABEÇALHO
+  // =========================
+  doc.text(`Nº: ${numeroOS}`, 20, y)
+  doc.text(`DATA: ${dataBR}`, 100, y)
+
+  y += 8
+
+  doc.text(`PLACA: ${item.veiculo}`, 20, y)
+  doc.text(`HORA: ${hora}`, 100, y)
+
+  y += 8
+
+  doc.text(`MOTORISTA: ${item.nome}`, 20, y)
 
   y += 15
 
+  // =========================
   // RELATO
+  // =========================
   doc.text("RELATO DO MOTORISTA:", 20, y)
   y += 8
 
-  const relato = item.observacoes || "Sem observações"
-  doc.text(relato, 20, y)
+  doc.line(20, y, 190, y)
+  y += 6
+
+  const relato = item.observacoes || ""
+  doc.text(relato, 22, y)
 
   y += 15
 
+  // =========================
   // SERVIÇO A SER FEITO
+  // =========================
   doc.text("SERVIÇO A SER FEITO:", 20, y)
   y += 8
 
+  doc.line(20, y, 190, y)
+  y += 6
+
   if(problemas.length === 0){
-    doc.text("Nenhum problema identificado", 20, y)
+    doc.text("Nenhum problema identificado", 22, y)
   } else {
     problemas.forEach(p => {
-      doc.text(`- ${p.nome}`, 20, y)
+      doc.text(`• ${p.nome}`, 22, y)
       y += 6
     })
   }
 
   y += 10
 
+  // =========================
   // SERVIÇO FEITO
+  // =========================
   doc.text("SERVIÇO FEITO NO VEÍCULO:", 20, y)
-  y += 20
+  y += 8
 
-  doc.text("__________________________________________", 20, y)
+  for(let i = 0; i < 4; i++){
+    doc.line(20, y, 190, y)
+    y += 8
+  }
 
-  y += 20
+  y += 10
 
+  // =========================
   // ASSINATURA
+  // =========================
   doc.text("Assinatura:", 20, y)
-  doc.text("__________________________", 60, y)
+  doc.line(60, y, 140, y)
 
+  // =========================
   // GERAR PDF
+  // =========================
   const blob = doc.output("blob")
   const url = URL.createObjectURL(blob)
 
   window.open(url)
 
+  // =========================
   // WHATSAPP
+  // =========================
   const numero = "5592986275697" // TROCAR
 
   const texto = encodeURIComponent(
-    `📄 ORDEM DE SERVIÇO\n\nVeículo: ${item.veiculo}\nServiço: ${
+    `📄 ${numeroOS}\nVeículo: ${item.veiculo}\nItens: ${
       problemas.length > 0
         ? problemas.map(p => p.nome).join(", ")
         : "Nenhum"
