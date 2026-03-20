@@ -62,7 +62,6 @@ const secoes = {
 // IA DE URGÊNCIA
 // =========================
 function calcularUrgencia(item){
-
   const itemLower = item.toLowerCase()
 
   if(itemLower.includes("freio") || itemLower.includes("farol") || itemLower.includes("seta")){
@@ -77,11 +76,13 @@ function calcularUrgencia(item){
 }
 
 // =========================
-// RENDER
+// RENDER CHECKLIST
 // =========================
 function renderChecklist(){
 
   const container = document.getElementById("checklist")
+  if(!container) return
+
   container.innerHTML = ""
 
   Object.keys(secoes).forEach(secao => {
@@ -124,7 +125,7 @@ function getValor(name){
 }
 
 // =========================
-// ANALISAR
+// ANALISAR CHECKLIST
 // =========================
 function analisarChecklist(respostas){
 
@@ -159,22 +160,18 @@ function analisarChecklist(respostas){
 // =========================
 function coletarChecklist(){
 
-  const dados = {
+  return {
     nome: nome.value,
     veiculo: veiculo.value,
     empresa: empresa.value,
     data: data.value,
     observacoes: obs.value,
-    respostas: {}
+    respostas: Object.fromEntries(
+      Object.values(secoes)
+        .flatMap(sec => sec.itens)
+        .map(item => [normalizar(item), getValor(normalizar(item))])
+    )
   }
-
-  Object.keys(secoes).forEach(secao => {
-    secoes[secao].itens.forEach(item => {
-      dados.respostas[normalizar(item)] = getValor(normalizar(item))
-    })
-  })
-
-  return dados
 }
 
 // =========================
@@ -196,21 +193,18 @@ function salvarChecklist(){
 // =========================
 // RESOLVER
 // =========================
-function resolver(indexChecklist, indexProblema){
+function resolver(i, j){
 
   const db = getDB()
-  db[indexChecklist].problemas[indexProblema].resolvido = true
-  saveDB(db)
+  db[i].problemas[j].resolvido = true
 
+  saveDB(db)
   listar()
   atualizarDashboard()
 }
 
 // =========================
-// GERAR OS + PDF + WHATSAPP
-// =========================
-// =========================
-// GERAR NÚMERO DA OS
+// NUMERO OS
 // =========================
 function gerarNumeroOS(){
   let numero = localStorage.getItem("numeroOS") || 0
@@ -220,7 +214,7 @@ function gerarNumeroOS(){
 }
 
 // =========================
-// FORMATAR DATA BR
+// DATA BR
 // =========================
 function formatarDataBR(dataISO){
   if(!dataISO) return ""
@@ -229,17 +223,12 @@ function formatarDataBR(dataISO){
 }
 
 // =========================
-// GERAR OS PROFISSIONAL
+// GERAR OS
 // =========================
 function gerarOS(index){
 
   const db = getDB()
   const item = db[index]
-
-  if(!item){
-    alert("Erro ao gerar OS")
-    return
-  }
 
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
@@ -252,107 +241,34 @@ function gerarOS(index){
 
   let y = 20
 
-  // =========================
-  // TÍTULO
-  // =========================
   doc.setFontSize(14)
   doc.text("ORDEM DE SERVIÇO", 70, y)
 
   y += 10
   doc.setFontSize(10)
 
-  // =========================
-  // CABEÇALHO
-  // =========================
   doc.text(`Nº: ${numeroOS}`, 20, y)
   doc.text(`DATA: ${dataBR}`, 100, y)
 
   y += 8
-
   doc.text(`PLACA: ${item.veiculo}`, 20, y)
   doc.text(`HORA: ${hora}`, 100, y)
 
   y += 8
-
   doc.text(`MOTORISTA: ${item.nome}`, 20, y)
 
-  y += 15
-
-  // =========================
-  // RELATO
-  // =========================
-  doc.text("RELATO DO MOTORISTA:", 20, y)
-  y += 8
-
-  doc.line(20, y, 190, y)
-  y += 6
-
-  const relato = item.observacoes || ""
-  doc.text(relato, 22, y)
-
-  y += 15
-
-  // =========================
-  // SERVIÇO A SER FEITO
-  // =========================
+  y += 12
   doc.text("SERVIÇO A SER FEITO:", 20, y)
-  y += 8
 
-  doc.line(20, y, 190, y)
   y += 6
 
-  if(problemas.length === 0){
-    doc.text("Nenhum problema identificado", 22, y)
-  } else {
-    problemas.forEach(p => {
-      doc.text(`• ${p.nome}`, 22, y)
-      y += 6
-    })
-  }
+  problemas.forEach(p => {
+    doc.text(`• ${p.nome}`, 22, y)
+    y += 6
+  })
 
-  y += 10
-
-  // =========================
-  // SERVIÇO FEITO
-  // =========================
-  doc.text("SERVIÇO FEITO NO VEÍCULO:", 20, y)
-  y += 8
-
-  for(let i = 0; i < 4; i++){
-    doc.line(20, y, 190, y)
-    y += 8
-  }
-
-  y += 10
-
-  // =========================
-  // ASSINATURA
-  // =========================
-  doc.text("Assinatura:", 20, y)
-  doc.line(60, y, 140, y)
-
-  // =========================
-  // GERAR PDF
-  // =========================
-  const blob = doc.output("blob")
-  const url = URL.createObjectURL(blob)
-
+  const url = URL.createObjectURL(doc.output("blob"))
   window.open(url)
-
-  // =========================
-  // WHATSAPP
-  // =========================
-  const numero = "5592986275697" // TROCAR
-
-  const texto = encodeURIComponent(
-    `📄 ${numeroOS}\nVeículo: ${item.veiculo}\nItens: ${
-      problemas.length > 0
-        ? problemas.map(p => p.nome).join(", ")
-        : "Nenhum"
-    }`
-  )
-
-  window.open(`https://wa.me/${numero}?text=${texto}`, "_blank")
 }
 
 // =========================
@@ -361,6 +277,8 @@ function gerarOS(index){
 function listar(){
 
   const lista = document.getElementById("lista")
+  if(!lista) return
+
   lista.innerHTML = ""
 
   const db = getDB()
@@ -371,38 +289,115 @@ function listar(){
     div.className = "card"
 
     const problemasHTML = item.problemas.map((p, j) => {
-
       const urgencia = calcularUrgencia(p.nome)
 
       return `
         <div>
           ${p.nome}
           <span class="tag ${urgencia}">${urgencia}</span>
-          ${
-            p.resolvido
-            ? "✅"
-            : `<button onclick="resolver(${i}, ${j})">✔</button>`
-          }
+          ${p.resolvido ? "✅" : `<button onclick="resolver(${i}, ${j})">✔</button>`}
         </div>
       `
     }).join("")
 
-    const status = item.problemas.some(p => !p.resolvido)
-      ? "PENDENTE"
-      : "LIBERADO"
+    const status = item.problemas.some(p => !p.resolvido) ? "PENDENTE" : "LIBERADO"
 
     div.innerHTML = `
       <b>${item.veiculo}</b><br>
-      Status: <span class="${status === "LIBERADO" ? "status-ok" : "status-pendente"}">${status}</span>
+      Status: ${status}
       <br><br>
       ${problemasHTML}
       <br><br>
-      <button onclick="gerarOS(${i})">📄 Gerar Ordem de Serviço</button>
+      <button onclick="gerarOS(${i})">📄 Gerar OS</button>
     `
 
     lista.appendChild(div)
   })
 }
+
+// =========================
+// DASHBOARD (CORRIGIDO)
+// =========================
+function atualizarDashboard(){
+
+  const db = getDB()
+  const dashboard = document.getElementById("dashboard")
+
+  if(!dashboard) return
+
+  if(!db || db.length === 0){
+    dashboard.innerHTML = "Sem dados ainda"
+    return
+  }
+
+  let pendentes = 0
+  let liberados = 0
+  let listaPendentes = []
+  let listaLiberados = []
+  let ranking = []
+
+  db.forEach(c => {
+
+    if(!c.problemas) return
+
+    const problemasPendentes = c.problemas.filter(p => !p.resolvido)
+
+    let score = 0
+
+    if(problemasPendentes.length > 0){
+
+      pendentes++
+      listaPendentes.push(c.veiculo || "Sem nome")
+
+      problemasPendentes.forEach(p => {
+        const urgencia = calcularUrgencia(p.nome)
+
+        if(urgencia === "urgente") score += 3
+        else if(urgencia === "media") score += 2
+        else score += 1
+      })
+
+      ranking.push({
+        veiculo: c.veiculo || "Sem nome",
+        score,
+        qtd: problemasPendentes.length
+      })
+
+    } else {
+      liberados++
+      listaLiberados.push(c.veiculo || "Sem nome")
+    }
+
+  })
+
+  ranking.sort((a, b) => b.score - a.score)
+
+  dashboard.innerHTML = `
+    <h3>📊 Resumo</h3>
+    🚛 Pendentes: ${pendentes} <br>
+    ✅ Liberados: ${liberados}
+
+    <hr>
+
+    <h3>🚛 Precisando de manutenção</h3>
+    ${listaPendentes.map(v => `- ${v}`).join("<br>") || "Nenhum"}
+
+    <hr>
+
+    <h3>✅ Liberados</h3>
+    ${listaLiberados.map(v => `- ${v}`).join("<br>") || "Nenhum"}
+
+    <hr>
+
+    <h3>🔥 Mais críticos</h3>
+    ${
+      ranking.slice(0,5).map(r => `
+        <div>🚛 ${r.veiculo} - Score ${r.score} (${r.qtd})</div>
+      `).join("") || "Sem dados"
+    }
+  `
+}
+
 // =========================
 // INIT
 // =========================
