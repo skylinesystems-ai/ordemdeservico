@@ -214,41 +214,88 @@ function gerarOS(index){
   const db = getDB()
   const item = db[index]
 
+  if(!item){
+    alert("Erro ao gerar OS")
+    return
+  }
+
   const { jsPDF } = window.jspdf
   const doc = new jsPDF()
 
   const problemas = item.problemas.filter(p => !p.resolvido)
 
+  const hora = new Date().toLocaleTimeString()
+
   let y = 20
 
-  doc.setFontSize(14)
-  doc.text("ORDEM DE SERVIÇO", 20, y)
+  doc.setFontSize(12)
+
+  // TÍTULO
+  doc.text("ORDEM DE SERVIÇO", 80, y)
+
+  y += 15
+
+  // CABEÇALHO
+  doc.text(`DATA: ${item.data}`, 20, y)
+  doc.text(`PLACA: ${item.veiculo}`, 120, y)
 
   y += 10
-  doc.setFontSize(10)
+  doc.text(`HORA: ${hora}`, 20, y)
+  doc.text(`MOTORISTA: ${item.nome}`, 120, y)
 
-  doc.text(`Veículo: ${item.veiculo}`, 20, y)
-  y += 6
-  doc.text(`Responsável: ${item.nome}`, 20, y)
+  y += 15
+
+  // RELATO
+  doc.text("RELATO DO MOTORISTA:", 20, y)
+  y += 8
+
+  const relato = item.observacoes || "Sem observações"
+  doc.text(relato, 20, y)
+
+  y += 15
+
+  // SERVIÇO A SER FEITO
+  doc.text("SERVIÇO A SER FEITO:", 20, y)
+  y += 8
+
+  if(problemas.length === 0){
+    doc.text("Nenhum problema identificado", 20, y)
+  } else {
+    problemas.forEach(p => {
+      doc.text(`- ${p.nome}`, 20, y)
+      y += 6
+    })
+  }
+
   y += 10
 
-  doc.text("Itens:", 20, y)
-  y += 6
+  // SERVIÇO FEITO
+  doc.text("SERVIÇO FEITO NO VEÍCULO:", 20, y)
+  y += 20
 
-  problemas.forEach(p => {
-    doc.text(`- ${p.nome}`, 20, y)
-    y += 6
-  })
+  doc.text("__________________________________________", 20, y)
 
+  y += 20
+
+  // ASSINATURA
+  doc.text("Assinatura:", 20, y)
+  doc.text("__________________________", 60, y)
+
+  // GERAR PDF
   const blob = doc.output("blob")
   const url = URL.createObjectURL(blob)
 
   window.open(url)
 
+  // WHATSAPP
   const numero = "5592999999999" // TROCAR
 
   const texto = encodeURIComponent(
-    `📄 Ordem de Serviço\n\nVeículo: ${item.veiculo}\nItens: ${problemas.map(p => p.nome).join(", ")}`
+    `📄 ORDEM DE SERVIÇO\n\nVeículo: ${item.veiculo}\nServiço: ${
+      problemas.length > 0
+        ? problemas.map(p => p.nome).join(", ")
+        : "Nenhum"
+    }`
   )
 
   window.open(`https://wa.me/${numero}?text=${texto}`, "_blank")
