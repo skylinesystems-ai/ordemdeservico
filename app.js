@@ -288,7 +288,7 @@ function gerarOS(index){
   window.open(url)
 
   // WHATSAPP
-  const numero = "5592999999999" // TROCAR
+  const numero = "5592986275697" // TROCAR
 
   const texto = encodeURIComponent(
     `📄 ORDEM DE SERVIÇO\n\nVeículo: ${item.veiculo}\nServiço: ${
