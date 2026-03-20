@@ -225,6 +225,28 @@ function formatarDataBR(dataISO){
 // =========================
 // GERAR OS
 // =========================
+// =========================
+// NUMERO OS
+// =========================
+function gerarNumeroOS(){
+  let numero = localStorage.getItem("numeroOS") || 0
+  numero++
+  localStorage.setItem("numeroOS", numero)
+  return "OS-" + String(numero).padStart(4, "0")
+}
+
+// =========================
+// DATA BR
+// =========================
+function formatarDataBR(dataISO){
+  if(!dataISO) return ""
+  const [ano, mes, dia] = dataISO.split("-")
+  return `${dia}/${mes}/${ano}`
+}
+
+// =========================
+// GERAR PDF PROFISSIONAL
+// =========================
 function gerarOS(index){
 
   const db = getDB()
@@ -239,38 +261,137 @@ function gerarOS(index){
 
   const problemas = item.problemas.filter(p => !p.resolvido)
 
-  let y = 20
+  // =========================
+  // CONFIG BASE
+  // =========================
+  const left = 15
+  const right = 195
+  let y = 15
 
-  doc.setFontSize(14)
+  doc.setFont("helvetica")
+
+  // =========================
+  // CABEÇALHO COM LOGO
+  // =========================
+  doc.setFontSize(16)
   doc.text("ORDEM DE SERVIÇO", 70, y)
 
-  y += 10
+  // espaço para logo
+  doc.rect(150, 8, 40, 20) // caixa logo
+
+  y += 15
+
+  // =========================
+  // GRID SUPERIOR
+  // =========================
   doc.setFontSize(10)
 
-  doc.text(`Nº: ${numeroOS}`, 20, y)
-  doc.text(`DATA: ${dataBR}`, 100, y)
+  // Linha 1
+  doc.text(`Nº: ${numeroOS}`, left, y)
+  doc.text(`DATA: ${dataBR}`, 110, y)
 
   y += 8
-  doc.text(`PLACA: ${item.veiculo}`, 20, y)
-  doc.text(`HORA: ${hora}`, 100, y)
+
+  // Linha 2
+  doc.text(`PLACA: ${item.veiculo}`, left, y)
+  doc.text(`HORA: ${hora}`, 110, y)
 
   y += 8
-  doc.text(`MOTORISTA: ${item.nome}`, 20, y)
+
+  // Linha 3
+  doc.text(`MOTORISTA: ${item.nome}`, left, y)
 
   y += 12
-  doc.text("SERVIÇO A SER FEITO:", 20, y)
+
+  // =========================
+  // RELATO
+  // =========================
+  doc.text("RELATO DO MOTORISTA:", left, y)
 
   y += 6
 
-  problemas.forEach(p => {
-    doc.text(`• ${p.nome}`, 22, y)
-    y += 6
-  })
+  for(let i=0;i<3;i++){
+    doc.line(left, y, right, y)
+    y += 7
+  }
 
-  const url = URL.createObjectURL(doc.output("blob"))
+  if(item.observacoes){
+    doc.text(item.observacoes, left + 2, y - 15)
+  }
+
+  y += 5
+
+  // =========================
+  // SERVIÇO A SER FEITO
+  // =========================
+  doc.text("SERVIÇO A SER FEITO:", left, y)
+
+  y += 6
+
+  for(let i=0;i<5;i++){
+    doc.line(left, y, right, y)
+    y += 7
+  }
+
+  let yLista = y - 30
+
+  if(problemas.length > 0){
+    problemas.forEach((p, i) => {
+      doc.text(`• ${p.nome}`, left + 2, yLista)
+      yLista += 6
+    })
+  }
+
+  y += 5
+
+  // =========================
+  // SERVIÇO FEITO
+  // =========================
+  doc.text("SERVIÇO FEITO NO VEÍCULO:", left, y)
+
+  y += 6
+
+  for(let i=0;i<5;i++){
+    doc.line(left, y, right, y)
+    y += 7
+  }
+
+  y += 5
+
+  // =========================
+  // ASSINATURA
+  // =========================
+  doc.text("Assinatura:", left, y)
+  doc.line(left + 35, y, left + 120, y)
+
+  // =========================
+  // BORDA EXTERNA (VISUAL PROFISSIONAL)
+  // =========================
+  doc.rect(10, 5, 190, 280)
+
+  // =========================
+  // GERAR PDF
+  // =========================
+  const blob = doc.output("blob")
+  const url = URL.createObjectURL(blob)
+
   window.open(url)
-}
 
+  // =========================
+  // WHATSAPP
+  // =========================
+  const numero = "5592986275697" // ALTERAR
+
+  const texto = encodeURIComponent(
+    `📄 ${numeroOS}\nVeículo: ${item.veiculo}\nServiço: ${
+      problemas.length > 0
+        ? problemas.map(p => p.nome).join(", ")
+        : "Nenhum"
+    }`
+  )
+
+  window.open(`https://wa.me/${numero}?text=${texto}`, "_blank")
+}
 // =========================
 // LISTAR
 // =========================
