@@ -407,25 +407,19 @@ function listar(){
 // =========================
 // DASHBOARD
 // =========================
-function atualizarDashboard(){
-
-  const db = getDB()
-
-  let pendentes = 0
-  let liberados = 0
-
-  db.forEach(c => {
-    const temProblema = c.problemas.some(p => !p.resolvido)
-    if(temProblema) pendentes++
-    else liberados++
-  })
-
-  document.getElementById("dashboard").innerHTML = `
-    🚛 Veículos Pendentes: ${pendentes} <br>
-    ✅ Veículos Liberados: ${liberados}
-  `
+#dashboard h3 {
+  margin-top: 10px;
+  color: #3b82f6;
 }
 
+#dashboard hr {
+  margin: 10px 0;
+  border: 1px solid #334155;
+}
+
+#dashboard div {
+  margin: 5px 0;
+}
 // =========================
 // INIT
 // =========================
