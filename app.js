@@ -439,9 +439,14 @@ function atualizarDashboard(){
 
   let pendentes = 0
   let liberados = 0
+
   let listaPendentes = []
   let listaLiberados = []
+
   let ranking = []
+
+  // 🔥 NOVO: AGRUPAMENTO DE PEÇAS
+  let pecasMap = {}
 
   db.forEach(c => {
 
@@ -457,11 +462,21 @@ function atualizarDashboard(){
       listaPendentes.push(c.veiculo || "Sem nome")
 
       problemasPendentes.forEach(p => {
+
         const urgencia = calcularUrgencia(p.nome)
 
+        // SCORE
         if(urgencia === "urgente") score += 3
         else if(urgencia === "media") score += 2
         else score += 1
+
+        // 🔥 AGRUPAR PEÇAS
+        if(!pecasMap[p.nome]){
+          pecasMap[p.nome] = []
+        }
+
+        pecasMap[p.nome].push(c.veiculo || "Sem nome")
+
       })
 
       ranking.push({
@@ -471,14 +486,44 @@ function atualizarDashboard(){
       })
 
     } else {
+
       liberados++
       listaLiberados.push(c.veiculo || "Sem nome")
+
     }
 
   })
 
+  // =========================
+  // ORDENAR RANKING
+  // =========================
   ranking.sort((a, b) => b.score - a.score)
 
+  const rankingHTML = ranking.slice(0,5).map(r => `
+    <div>
+      🚛 <b>${r.veiculo}</b> 
+      - Score: ${r.score} 
+      (${r.qtd} problemas)
+    </div>
+  `).join("")
+
+  // =========================
+  // 🔥 LISTA DE COMPRAS AGRUPADA
+  // =========================
+  const pecasHTML = Object.keys(pecasMap).map(peca => {
+
+    const carros = pecasMap[peca]
+
+    return `
+      <div>
+        🔧 <b>${peca}</b> → ${carros.join(", ")}
+      </div>
+    `
+  }).join("")
+
+  // =========================
+  // RENDER
+  // =========================
   dashboard.innerHTML = `
     <h3>📊 Resumo</h3>
     🚛 Pendentes: ${pendentes} <br>
@@ -497,12 +542,94 @@ function atualizarDashboard(){
     <hr>
 
     <h3>🔥 Mais críticos</h3>
-    ${
-      ranking.slice(0,5).map(r => `
-        <div>🚛 ${r.veiculo} - Score ${r.score} (${r.qtd})</div>
-      `).join("") || "Sem dados"
-    }
+    ${rankingHTML || "Sem dados"}
+
+    <hr>
+
+    <h3>📦 Lista de Compras (Agrupada)</h3>
+    ${pecasHTML || "Sem peças pendentes"}
   `
+}
+
+function exportarComprasPDF(){
+
+  const db = getDB()
+
+  if(!db || db.length === 0){
+    alert("Sem dados para exportar")
+    return
+  }
+
+  const { jsPDF } = window.jspdf
+  const doc = new jsPDF()
+
+  let pecasMap = {}
+
+  // AGRUPAR PEÇAS
+  db.forEach(c => {
+
+    if(!c.problemas) return
+
+    const problemasPendentes = c.problemas.filter(p => !p.resolvido)
+
+    problemasPendentes.forEach(p => {
+
+      if(!pecasMap[p.nome]){
+        pecasMap[p.nome] = []
+      }
+
+      pecasMap[p.nome].push(c.veiculo || "Sem nome")
+
+    })
+
+  })
+
+  const pecas = Object.keys(pecasMap)
+
+  let y = 20
+
+  // TÍTULO
+  doc.setFontSize(14)
+  doc.text("LISTA DE COMPRAS - FROTA", 40, y)
+
+  y += 10
+  doc.setFontSize(10)
+
+  if(pecas.length === 0){
+    doc.text("Nenhuma peça pendente", 20, y)
+  } else {
+
+    pecas.forEach(peca => {
+
+      const carros = pecasMap[peca]
+      const quantidade = carros.length
+
+      const linha = `• ${peca} (Qtd: ${quantidade})`
+
+      doc.text(linha, 20, y)
+      y += 6
+
+      const textoCarros = "Veículos: " + carros.join(", ")
+      const quebrado = doc.splitTextToSize(textoCarros, 160)
+
+      doc.text(quebrado, 25, y)
+      y += quebrado.length * 6 + 4
+
+      // QUEBRA DE PÁGINA AUTOMÁTICA
+      if(y > 270){
+        doc.addPage()
+        y = 20
+      }
+
+    })
+
+  }
+
+  // GERAR PDF
+  const blob = doc.output("blob")
+  const url = URL.createObjectURL(blob)
+
+  window.open(url)
 }
 
 // =========================
